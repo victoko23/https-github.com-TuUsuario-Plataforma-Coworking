@@ -1,0 +1,38 @@
+[
+    {
+        "model": "coworking.espacio",
+        "pk": 1,
+        "fields": {
+            "nombre": "Oficina Ejecutiva Premium",
+            "tipo": "oficina",
+            "capacidad": 4,
+            "precio_por_hora": "15000.00",
+            "disponible": true,
+            "habilitado": true
+        }
+    },
+    {
+        "model": "coworking.espacio",
+        "pk": 2,
+        "fields": {
+            "nombre": "Sala de Juntas Innovación",
+            "tipo": "sala",
+            "capacidad": 10,
+            "precio_por_hora": "25000.00",
+            "disponible": true,
+            "habilitado": true
+        }
+    },
+    {
+        "model": "coworking.espacio",
+        "pk": 3,
+        "fields": {
+            "nombre": "Escritorio Flexible Nómada",
+            "tipo": "escritorio",
+            "capacidad": 1,
+            "precio_por_hora": "5000.00",
+            "disponible": true,
+            "habilitado": true
+        }
+    }
+]

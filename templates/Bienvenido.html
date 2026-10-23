@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coworking API | Dashboard Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'] }, colors: { primary: '#4F46E5', dark: '#0F172A' } } }
+        }
+    </script>
+    <style>
+        body { background-color: #F8FAFC; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 4px; }
+    </style>
+</head>
+<body class="flex h-screen overflow-hidden text-slate-800">
+
+    <!-- ¡ESTA LÍNEA ES LA MAGIA PARA EL ERROR 403! -->
+    {% csrf_token %}
+
+    <!-- SIDEBAR -->
+    <aside class="w-64 bg-dark text-slate-300 flex flex-col shadow-2xl z-10">
+        <div class="h-20 flex items-center px-6 border-b border-slate-700">
+            <i class='bx bxs-building-house text-3xl text-primary mr-3'></i>
+            <span class="text-xl font-bold text-white tracking-wide">CoworkSpace</span>
+        </div>
+        <nav class="flex-1 py-6 px-4 space-y-2">
+            <p class="px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Módulos</p>
+            <button onclick="switchTab('clientes', this)" class="tab-btn w-full flex items-center px-4 py-3 bg-primary text-white rounded-lg transition-all shadow-md">
+                <i class='bx bx-group text-xl mr-3'></i> Clientes
+            </button>
+            <button onclick="switchTab('espacios', this)" class="tab-btn w-full flex items-center px-4 py-3 hover:bg-slate-800 hover:text-white rounded-lg transition-all">
+                <i class='bx bx-door-open text-xl mr-3'></i> Espacios
+            </button>
+            <button onclick="switchTab('reservas', this)" class="tab-btn w-full flex items-center px-4 py-3 hover:bg-slate-800 hover:text-white rounded-lg transition-all">
+                <i class='bx bx-calendar-check text-xl mr-3'></i> Reservas
+            </button>
+            
+            <p class="px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider mt-8 mb-2">Sistema</p>
+            <a href="/admin/" target="_blank" class="flex items-center px-4 py-3 hover:bg-slate-800 hover:text-white rounded-lg transition-all">
+                <i class='bx bx-shield-quarter text-xl mr-3'></i> Admin Django
+            </a>
+            <a href="/coworking/api/" target="_blank" class="flex items-center px-4 py-3 hover:bg-slate-800 hover:text-white rounded-lg transition-all">
+                <i class='bx bx-code-block text-xl mr-3'></i> API REST
+            </a>
+        </nav>
+        <div class="p-4 border-t border-slate-700">
+            <div class="bg-slate-800 p-4 rounded-xl flex items-center gap-3">
+                <div class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
+                <span class="text-xs font-medium text-slate-300">Base de Datos Activa</span>
+            </div>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="flex-1 flex flex-col h-screen overflow-hidden relative">
+        <header class="h-20 bg-white border-b border-slate-200 flex items-center justify-between px-8 z-0">
+            <h1 id="page-title" class="text-2xl font-bold text-slate-800">Gestión de Clientes</h1>
+            <div class="flex items-center gap-4">
+                <span class="text-sm font-medium text-slate-500">Evaluación N°2 Backend</span>
+                <div class="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-bold">V</div>
+            </div>
+        </header>
+
+        <div class="flex-1 overflow-y-auto p-8 relative">
+
+            <!-- ================= TAB CLIENTES ================= -->
+            <div id="tab-clientes" class="tab-content active">
+                <div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
+                    <div class="xl:col-span-1">
+                        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sticky top-0">
+                            <h2 class="text-lg font-bold mb-6 flex items-center gap-2"><i class='bx bx-user-plus text-primary text-xl'></i> Nuevo Cliente</h2>
+                            <form id="form-cliente" class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700 mb-1">Nombre Completo</label>
+                                    <input type="text" id="cli-nombre" required class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary outline-none transition-all">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700 mb-1">RUT (Único)</label>
+                                    <input type="text" id="cli-rut" required class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary outline-none transition-all" placeholder="Ej: 12345678-9">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700 mb-1">Email (Opcional)</label>
+                                    <input type="email" id="cli-email" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary outline-none transition-all">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700 mb-1">Teléfono (Opcional)</label>
+                                    <input type="text" id="cli-telefono" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary outline-none transition-all">
+                                </div>
+                                <button type="submit" class="w-full bg-primary hover:bg-indigo-700 text-white font-semibold py-3 rounded-lg transition-all shadow-md flex justify-center items-center gap-2">
+                                    <i class='bx bx-save'></i> Guardar Cliente
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    <div class="xl:col-span-2">
+                        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                            <div class="p-6 border-b border-slate-200">
+                                <h2 class="text-lg font-bold text-slate-800">Directorio</h2>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr class="bg-slate-50 text-slate-500 text-sm uppercase tracking-wider">
+                                            <th class="p-4 font-semibold">ID</th>
+                                            <th class="p-4 font-semibold">Nombre</th>
+                                            <th class="p-4 font-semibold">RUT</th>
+                                            <th class="p-4 font-semibold">Contacto</th>
+                                            <th class="p-4 font-semibold text-center">Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tbody-clientes" class="divide-y divide-slate-100"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================= TAB ESPACIOS ================= -->
+            <div id="tab-espacios" class="tab-content">
+                <div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
+                    <div class="xl:col-span-1">
+                        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                            <h2 class="text-lg font-bold mb-6 flex items-center gap-2"><i class='bx bx-door-open text-primary text-xl'></i> Nuevo Espacio</h2>
+                            <form id="form-espacio" class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700 mb-1">Nombre</label>
+                                    <input type="text" id="esp-nombre" required class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary outline-none">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700 mb-1">Tipo</label>
+                                    <select id="esp-tipo" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary outline-none bg-white">
+                                        <option value="oficina">Oficina Privada</option>
+                                        <option value="sala">Sala de Reuniones</option>
+                                        <option value="escritorio">Escritorio Flexible</option>
+                                    </select>
+                                </div>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-slate-700 mb-1">Capacidad</label>
+                                        <input type="number" id="esp-capacidad" required min="1" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary outline-none">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-slate-700 mb-1">Precio/Hora</label>
+                                        <input type="number" id="esp-precio" required min="0" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary outline-none">
+                                    </div>
+                                </div>
+                                <button type="submit" class="w-full bg-primary hover:bg-indigo-700 text-white font-semibold py-3 rounded-lg transition-all shadow-md flex justify-center items-center gap-2">
+                                    <i class='bx bx-save'></i> Guardar Espacio
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    <div class="xl:col-span-2">
+                        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                            <div class="p-6 border-b border-slate-200">
+                                <h2 class="text-lg font-bold text-slate-800">Inventario de Espacios</h2>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr class="bg-slate-50 text-slate-500 text-sm uppercase tracking-wider">
+                                            <th class="p-4 font-semibold">ID</th>
+                                            <th class="p-4 font-semibold">Nombre</th>
+                                            <th class="p-4 font-semibold">Tipo</th>
+                                            <th class="p-4 font-semibold">Precio</th>
+                                            <th class="p-4 font-semibold text-center">Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tbody-espacios" class="divide-y divide-slate-100"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================= TAB RESERVAS ================= -->
+            <div id="tab-reservas" class="tab-content">
+                <div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
+                    <div class="xl:col-span-1">
+                        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                            <h2 class="text-lg font-bold mb-6 flex items-center gap-2"><i class='bx bx-calendar-plus text-primary text-xl'></i> Nueva Reserva</h2>
+                            <form id="form-reserva" class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700 mb-1">Cliente</label>
+                                    <select id="res-cliente" required class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary outline-none bg-white"></select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700 mb-1">Espacio</label>
+                                    <select id="res-espacio" required class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary outline-none bg-white"></select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700 mb-1">Fecha y Hora</label>
+                                    <input type="datetime-local" id="res-fecha" required class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary outline-none">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700 mb-1">Estado</label>
+                                    <select id="res-estado" required class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-primary outline-none bg-white">
+                                        <option value="pendiente">Pendiente</option>
+                                        <option value="pagada">Pagada</option>
+                                        <option value="cancelada">Cancelada</option>
+                                    </select>
+                                </div>
+                                <button type="submit" class="w-full bg-primary hover:bg-indigo-700 text-white font-semibold py-3 rounded-lg transition-all shadow-md flex justify-center items-center gap-2">
+                                    <i class='bx bx-calendar-check'></i> Registrar Reserva
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    <div class="xl:col-span-2">
+                        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                            <div class="p-6 border-b border-slate-200">
+                                <h2 class="text-lg font-bold text-slate-800">Historial de Reservas</h2>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr class="bg-slate-50 text-slate-500 text-sm uppercase tracking-wider">
+                                            <th class="p-4 font-semibold">ID</th>
+                                            <th class="p-4 font-semibold">Cliente</th>
+                                            <th class="p-4 font-semibold">Espacio</th>
+                                            <th class="p-4 font-semibold">Fecha</th>
+                                            <th class="p-4 font-semibold">Estado</th>
+                                            <th class="p-4 font-semibold text-center">Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tbody-reservas" class="divide-y divide-slate-100"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        const API_BASE = '/coworking/api';
+        
+        // Obtenemos el Token de Seguridad CSRF que pusimos en el HTML
+        const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+        const Toast = Swal.mixin({
+            toast: true, position: 'top-end', showConfirmButton: false, timer: 3000, timerProgressBar: true,
+            didOpen: (toast) => { toast.addEventListener('mouseenter', Swal.stopTimer); toast.addEventListener('mouseleave', Swal.resumeTimer); }
+        });
+
+        function switchTab(tabName, btn) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => {
+                b.classList.remove('bg-primary', 'text-white', 'shadow-md');
+                b.classList.add('hover:bg-slate-800', 'hover:text-white');
+            });
+            
+            document.getElementById('tab-' + tabName).classList.add('active');
+            btn.classList.remove('hover:bg-slate-800', 'hover:text-white');
+            btn.classList.add('bg-primary', 'text-white', 'shadow-md');
+
+            const titles = { 'clientes': 'Gestión de Clientes', 'espacios': 'Gestión de Espacios', 'reservas': 'Gestión de Reservas' };
+            document.getElementById('page-title').innerText = titles[tabName];
+
+            if(tabName === 'clientes') cargarClientes();
+            if(tabName === 'espacios') cargarEspacios();
+            if(tabName === 'reservas') cargarReservas();
+        }
+
+        async function handleApiError(response) {
+            const errData = await response.json();
+            let errorMsg = "Revisa los datos ingresados. Puede que falte un campo obligatorio.";
+            
+            if (errData.rut && errData.rut[0].includes("already exists")) {
+                errorMsg = "Este RUT ya está registrado en el sistema. Por favor usa otro.";
+            } else if (errData.nombre) {
+                errorMsg = "El campo nombre es obligatorio.";
+            } else if (errData.fecha_reserva) {
+                errorMsg = "El formato de la fecha es incorrecto.";
+            }
+
+            Swal.fire({ icon: 'error', title: 'Error de Validación', text: errorMsg, confirmButtonColor: '#4F46E5' });
+        }
+
+        // ==========================================
+        // 1. CLIENTES
+        // ==========================================
+        function cargarClientes() {
+            fetch(`${API_BASE}/clientes/`)
+                .then(res => res.json())
+                .then(data => {
+                    const tbody = document.getElementById('tbody-clientes');
+                    tbody.innerHTML = data.length === 0 ? '<tr><td colspan="5" class="p-4 text-center text-slate-500">No hay clientes registrados.</td></tr>' : '';
+                    data.forEach(item => {
+                        tbody.innerHTML += `
+                            <tr class="hover:bg-slate-50 transition-colors">
+                                <td class="p-4 text-slate-500">#${item.id}</td>
+                                <td class="p-4 font-semibold text-slate-800">${item.nombre}</td>
+                                <td class="p-4">${item.rut}</td>
+                                <td class="p-4 text-slate-500 text-sm">${item.email || '-'}<br>${item.telefono || '-'}</td>
+                                <td class="p-4 text-center">
+                                    <button onclick="eliminarRegistro('clientes', ${item.id})" class="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 p-2 rounded-lg transition-colors" title="Eliminar">
+                                        <i class='bx bx-trash text-lg'></i>
+                                    </button>
+                                </td>
+                            </tr>`;
+                    });
+                });
+        }
+
+        document.getElementById('form-cliente').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const data = {
+                nombre: document.getElementById('cli-nombre').value,
+                rut: document.getElementById('cli-rut').value,
+                email: document.getElementById('cli-email').value || null,
+                telefono: document.getElementById('cli-telefono').value || null
+            };
+            fetch(`${API_BASE}/clientes/`, {
+                method: 'POST', 
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken // <--- ENVIAMOS EL TOKEN AQUÍ
+                }, 
+                body: JSON.stringify(data)
+            }).then(async res => {
+                if(res.ok) { 
+                    Toast.fire({icon:'success', title:'Cliente guardado'}); 
+                    this.reset(); cargarClientes(); 
+                } else {
+                    handleApiError(res);
+                }
+            });
+        });
+
+        // ==========================================
+        // 2. ESPACIOS
+        // ==========================================
+        function cargarEspacios() {
+            fetch(`${API_BASE}/espacios/`)
+                .then(res => res.json())
+                .then(data => {
+                    const tbody = document.getElementById('tbody-espacios');
+                    tbody.innerHTML = data.length === 0 ? '<tr><td colspan="5" class="p-4 text-center text-slate-500">No hay espacios registrados.</td></tr>' : '';
+                    data.forEach(item => {
+                        tbody.innerHTML += `
+                            <tr class="hover:bg-slate-50 transition-colors">
+                                <td class="p-4 text-slate-500">#${item.id}</td>
+                                <td class="p-4 font-semibold text-slate-800">${item.nombre}</td>
+                                <td class="p-4"><span class="bg-indigo-50 text-indigo-600 px-2 py-1 rounded-md text-xs font-semibold uppercase">${item.tipo}</span></td>
+                                <td class="p-4 font-medium">$${item.precio_por_hora}</td>
+                                <td class="p-4 text-center">
+                                    <button onclick="eliminarRegistro('espacios', ${item.id})" class="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 p-2 rounded-lg transition-colors">
+                                        <i class='bx bx-trash text-lg'></i>
+                                    </button>
+                                </td>
+                            </tr>`;
+                    });
+                });
+        }
+
+        document.getElementById('form-espacio').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const data = {
+                nombre: document.getElementById('esp-nombre').value,
+                tipo: document.getElementById('esp-tipo').value,
+                capacidad: document.getElementById('esp-capacidad').value,
+                precio_por_hora: document.getElementById('esp-precio').value,
+                disponible: true
+            };
+            fetch(`${API_BASE}/espacios/`, {
+                method: 'POST', 
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken // <--- ENVIAMOS EL TOKEN AQUÍ
+                }, 
+                body: JSON.stringify(data)
+            }).then(res => {
+                if(res.ok) { Toast.fire({icon:'success', title:'Espacio guardado'}); this.reset(); cargarEspacios(); }
+                else { handleApiError(res); }
+            });
+        });
+
+        // ==========================================
+        // 3. RESERVAS
+        // ==========================================
+        function cargarReservas() {
+            Promise.all([
+                fetch(`${API_BASE}/clientes/`).then(r => r.json()),
+                fetch(`${API_BASE}/espacios/`).then(r => r.json()),
+                fetch(`${API_BASE}/reservas/`).then(r => r.json())
+            ]).then(([clientes, espacios, reservas]) => {
+                const selCliente = document.getElementById('res-cliente');
+                const selEspacio = document.getElementById('res-espacio');
+                selCliente.innerHTML = '<option value="">Seleccione...</option>';
+                selEspacio.innerHTML = '<option value="">Seleccione...</option>';
+                clientes.forEach(c => selCliente.innerHTML += `<option value="${c.id}">${c.nombre}</option>`);
+                espacios.forEach(e => selEspacio.innerHTML += `<option value="${e.id}">${e.nombre}</option>`);
+
+                const tbody = document.getElementById('tbody-reservas');
+                tbody.innerHTML = reservas.length === 0 ? '<tr><td colspan="6" class="p-4 text-center text-slate-500">No hay reservas registradas.</td></tr>' : '';
+                
+                reservas.forEach(r => {
+                    const cli = clientes.find(c => c.id === r.cliente)?.nombre || 'Desconocido';
+                    const esp = espacios.find(e => e.id === r.espacio)?.nombre || 'Desconocido';
+                    const fecha = new Date(r.fecha_reserva).toLocaleString('es-CL');
+                    
+                    let badge = '';
+                    if(r.estado === 'pagada') badge = 'bg-emerald-50 text-emerald-600';
+                    else if(r.estado === 'cancelada') badge = 'bg-red-50 text-red-600';
+                    else badge = 'bg-amber-50 text-amber-600';
+
+                    tbody.innerHTML += `
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="p-4 text-slate-500">#${r.id}</td>
+                            <td class="p-4 font-semibold text-slate-800">${cli}</td>
+                            <td class="p-4 text-slate-600">${esp}</td>
+                            <td class="p-4 text-sm">${fecha}</td>
+                            <td class="p-4"><span class="${badge} px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide">${r.estado}</span></td>
+                            <td class="p-4 text-center">
+                                <button onclick="eliminarRegistro('reservas', ${r.id})" class="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 p-2 rounded-lg transition-colors">
+                                    <i class='bx bx-trash text-lg'></i>
+                                </button>
+                            </td>
+                        </tr>`;
+                });
+            });
+        }
+
+        document.getElementById('form-reserva').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const data = {
+                cliente: document.getElementById('res-cliente').value,
+                espacio: document.getElementById('res-espacio').value,
+                fecha_reserva: document.getElementById('res-fecha').value,
+                estado: document.getElementById('res-estado').value
+            };
+            fetch(`${API_BASE}/reservas/`, {
+                method: 'POST', 
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken // <--- ENVIAMOS EL TOKEN AQUÍ
+                }, 
+                body: JSON.stringify(data)
+            }).then(res => {
+                if(res.ok) { Toast.fire({icon:'success', title:'Reserva creada'}); this.reset(); cargarReservas(); }
+                else { handleApiError(res); }
+            });
+        });
+
+        // ==========================================
+        // 4. ELIMINAR (Método DELETE)
+        // ==========================================
+        function eliminarRegistro(recurso, id) {
+            Swal.fire({
+                title: '¿Estás seguro?',
+                text: "Esta acción eliminará el registro permanentemente.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#64748b',
+                confirmButtonText: 'Sí, eliminar',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    fetch(`${API_BASE}/${recurso}/${id}/`, { 
+                        method: 'DELETE',
+                        headers: { 'X-CSRFToken': csrftoken } // <--- TOKEN TAMBIÉN PARA ELIMINAR
+                    })
+                    .then(res => {
+                        if(res.ok) {
+                            Toast.fire({icon:'success', title:'Registro eliminado'});
+                            if(recurso === 'clientes') cargarClientes();
+                            if(recurso === 'espacios') cargarEspacios();
+                            if(recurso === 'reservas') cargarReservas();
+                        } else { Swal.fire('Error', 'No se pudo eliminar.', 'error'); }
+                    });
+                }
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => cargarClientes());
+    </script>
+</body>
+</html>
